@@ -557,5 +557,6 @@ Please send all improvement suggestions, remarks, and bug reports to:
 
 I made this project for myself, but I decided to share it with everyone. If you want to
 support me - write me an email and I will send the details
+My own website: maring.ru
 
 Thank you for using Upscaler!
