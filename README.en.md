@@ -47,6 +47,7 @@ CPU, and the heavy AI models are optional (see
 | ![Main window, single mode](docs/screenshots/01-main-single.png) **Main window** — before/after canvas, left control panel, version history on the right | ![Correction sections](docs/screenshots/02-correction-sections.png) **Correction** — collapsible sections: tone, color, detail |
 | ![SmartDeblur](docs/screenshots/03-smartdeblur.png) **SmartDeblur** — manual deconvolution with preview | ![ICEdit](docs/screenshots/04-icedit.png) **ICEdit** — editing by text instruction |
 | ![Variant blending](docs/screenshots/05-blend.png) **Blending** — variant list + 25 blend modes | ![Face zones](docs/screenshots/06-face-zones.png) **Faces** — manual zone marking for CodeFormer |
+| ![Before](docs/screenshots/200x200.png) **blurred image** | ![After](docs/screenshots/800x800.jpg) **Restored image** |
 | ![Version history](docs/screenshots/07-history.png) **History** — versions with thumbnails, revert and compare | |
 
 ## Running on a mini-PC
