@@ -45,7 +45,7 @@
 | ![Главное окно, одиночный режим](docs/screenshots/01-main-single.png) **Главное окно** — холст до/после, левая панель управления, история версий справа | ![Секции коррекции](docs/screenshots/02-correction-sections.png) **Коррекция** — сворачиваемые секции: тон, цвет, детали |
 | ![SmartDeblur](docs/screenshots/03-smartdeblur.png) **SmartDeblur** — ручная деконволюция с предпросмотром | ![ICEdit](docs/screenshots/04-icedit.png) **ICEdit** — правка по текстовой инструкции |
 | ![Смешивание вариантов](docs/screenshots/05-blend.png) **Смешивание** — список вариантов + 25 режимов наложения | ![Зоны лиц](docs/screenshots/06-face-zones.png) **Лица** — ручная разметка зон для CodeFormer |
-| ![До](docs/screenshots/200x200.jpg) **Смешивание** — список вариантов + 25 режимов наложения | ![После](docs/screenshots/800x800.jpg) **Лица** — ручная разметка зон для CodeFormer |
+| ![До](docs/screenshots/200x200.jpg) **Размытое изображение** | ![После](docs/screenshots/800x800.jpg) **Восстановленное изображение** |
 | ![История версий](docs/screenshots/07-history.png) **История** — версии с миниатюрами, откат и сравнение | |
 
 ## Запуск на мини-ПК
