@@ -554,9 +554,7 @@ Please send all improvement suggestions, remarks, and bug reports to:
 
 ## Support the project
 
-I built this project for myself, but decided to share it with everyone. If
-you'd like to support me, here are my details:
-
-> `[add your details: card / crypto wallet / Boosty / Ko-fi]`
+I made this project for myself, but I decided to share it with everyone. If you want to
+support me - write me an email and I will send the details
 
 Thank you for using Upscaler!
