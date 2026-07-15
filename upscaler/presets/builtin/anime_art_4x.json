@@ -1,0 +1,11 @@
+{
+  "name": "Anime/Art 4x",
+  "description": "Optimized for illustrations and anime",
+  "scale": 4,
+  "enhance_only": false,
+  "pipeline": {
+    "denoise": {"Bilateral": {"d": 5, "sigma_color": 30, "sigma_space": 30}},
+    "scale": {"plugin": "DAT"},
+    "post": {"sharpen": 0.15}
+  }
+}

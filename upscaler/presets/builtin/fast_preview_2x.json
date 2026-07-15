@@ -1,0 +1,10 @@
+{
+  "name": "Fast Preview 2x",
+  "description": "Quick preview, no AI processing",
+  "scale": 2,
+  "enhance_only": false,
+  "pipeline": {
+    "adjust": {"Auto Contrast": {}},
+    "scale": {"plugin": "Lanczos"}
+  }
+}

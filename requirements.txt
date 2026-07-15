@@ -1,0 +1,32 @@
+PySide6>=6.6
+torch>=2.5
+torchvision>=0.16
+opencv-python-headless>=4.8
+numpy>=1.24
+Pillow>=10.0
+rawpy>=0.19
+OpenEXR>=3.2
+scikit-image>=0.22
+bm3d>=4.0
+PyWavelets>=1.5
+scipy>=1.11
+safetensors>=0.4
+spandrel>=0.4
+einops
+# Optional: local GGUF LLM advisor for auto-config refinement.
+# Install manually to enable it:  pip install "llama-cpp-python>=0.3"
+# Requires a vision-capable build + mmproj file for true image input;
+# otherwise the advisor uses a textual image summary. The app runs without it.
+# Optional: ICEdit (in-context image editing via FLUX.1-Fill-dev GGUF + LoRA).
+# All imports are lazy — the core app runs without these packages.
+# Install manually to enable:  pip install diffusers transformers accelerate peft gguf sentencepiece protobuf
+diffusers>=0.31
+transformers>=4.44
+accelerate>=0.33
+peft>=0.12
+gguf>=0.10
+sentencepiece
+protobuf
+# Face restoration (CodeFormer) — optional; the app runs without it.
+# For CUDA acceleration, onnxruntime-gpu may replace onnxruntime (platform-specific; not pinned here).
+onnxruntime>=1.16

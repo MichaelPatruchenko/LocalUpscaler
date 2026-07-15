@@ -1,0 +1,39 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# Logs and ad-hoc debug dumps
+*.log
+script.log
+EPBI.txt
+HATSE.txt
+HTDWI.txt
+NAFNETERR.txt
+NAFNETError.txt
+new *.txt
+python_*.png
+
+# Downloaded model weights (fetched on demand, not source)
+upscaler/models/models/
+~/.upscaler/
+
+# Third-party packages / installers pulled in locally, not repo sources
+packages/
+*.spec.bak
+
+# Heavy local sample images (not referenced by README/code; README screenshots
+# are generated synthetically by scripts/make_screenshots.py)
+examples/
+
+# Under docs/, only the screenshots are part of the published project;
+# everything else there is local working material.
+docs/*
+!docs/screenshots/

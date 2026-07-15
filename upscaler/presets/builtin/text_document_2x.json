@@ -1,0 +1,12 @@
+{
+  "name": "Text/Document 2x",
+  "description": "Scanned documents and screenshots",
+  "scale": 2,
+  "enhance_only": false,
+  "pipeline": {
+    "denoise": {"BM3D": {"sigma": 15}},
+    "adjust": {"Auto Contrast": {"clip_percent": 0.5}},
+    "scale": {"plugin": "SwinIR"},
+    "post": {"sharpen": 0.8}
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Archival Restore",
+  "description": "Old or damaged photographs",
+  "scale": 4,
+  "enhance_only": false,
+  "pipeline": {
+    "denoise": {"BM3D": {"sigma": 40}},
+    "adjust": {"Auto Tone": {}, "Auto Color": {"strength": 1.0}},
+    "scale": {"plugin": "OmniSR"},
+    "post": {"sharpen": 0.2}
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Enhance Only",
+  "description": "Improve image quality without resizing",
+  "scale": 1,
+  "enhance_only": true,
+  "pipeline": {
+    "denoise": {"NAFNet": {"strength": 0.6}},
+    "adjust": {"Auto Tone": {}, "Auto Color": {}},
+    "post": {"sharpen": 0.3}
+  }
+}

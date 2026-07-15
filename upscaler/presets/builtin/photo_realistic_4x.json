@@ -1,0 +1,12 @@
+{
+  "name": "Photo Realistic 4x",
+  "description": "Best for photographs, balanced quality and speed",
+  "scale": 4,
+  "enhance_only": false,
+  "pipeline": {
+    "denoise": {"SCUNet": {"strength": 0.5}},
+    "adjust": {"Auto Color": {}},
+    "scale": {"plugin": "Real-ESRGAN", "model_variant": "x4plus"},
+    "post": {"sharpen": 0.3}
+  }
+}

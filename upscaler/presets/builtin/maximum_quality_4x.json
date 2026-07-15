@@ -1,0 +1,12 @@
+{
+  "name": "Maximum Quality 4x",
+  "description": "Slowest, highest quality output",
+  "scale": 4,
+  "enhance_only": false,
+  "pipeline": {
+    "denoise": {"BM3D": {"sigma": 20}, "SCUNet": {"strength": 0.3}},
+    "adjust": {"Auto Tone": {}, "Auto Color": {}},
+    "scale": {"plugin": "HAT-S"},
+    "post": {"sharpen": 0.25, "artifact_reduction": true}
+  }
+}
