@@ -127,11 +127,6 @@ class SourceAnalyzer:
             rgb = image[:, :, :3]
             if rgb.dtype != np.uint8:
                 rgb = np.clip(rgb * 255.0, 0, 255).astype(np.uint8)
-            h, w = rgb.shape[:2]
-            scale = 1024.0 / max(h, w)
-            if scale < 1.0:
-                rgb = cv2.resize(rgb, (int(w * scale), int(h * scale)),
-                                 interpolation=cv2.INTER_AREA)
 
             mm = ModelManager(MODELS_DIR)
             path = mm.get_model_path("YuNet")
@@ -140,11 +135,13 @@ class SourceAnalyzer:
                     mm.download("YuNet")
                 except Exception:
                     return {"has_faces": False, "face_count": 0}
+            # facedet владеет нормализацией разрешения и возвращает лица в
+            # координатах оригинала — тот же путь, что у face_restore, поэтому
+            # has_faces/face_count совпадают с тем, что увидит восстановление.
             faces = facedet.detect_faces(rgb, str(path))
             result = {"has_faces": bool(faces), "face_count": len(faces)}
             if faces:
-                inv_scale = 1.0 / scale if scale < 1.0 else 1.0
-                result.update(self._face_quality_metrics(rgb, faces, inv_scale))
+                result.update(self._face_quality_metrics(rgb, faces, 1.0))
             return result
         except Exception:
             return {"has_faces": False, "face_count": 0}
@@ -154,9 +151,9 @@ class SourceAnalyzer:
                               inv_scale: float) -> dict:
         """Резкость/шум/размер лицевых кропов для авто-подбора CodeFormer.
 
-        rgb — детекционная копия (uint8), faces — list[Face] в её координатах,
-        inv_scale — множитель пересчёта размеров в пиксели оригинала.
-        Пустой список лиц -> {}.
+        rgb — изображение (uint8), faces — list[Face] в его координатах,
+        inv_scale — множитель пересчёта размеров в пиксели оригинала (1.0,
+        когда rgb уже полноразмерный). Пустой список лиц -> {}.
         """
         h, w = rgb.shape[:2]
         gray = cv2.cvtColor(rgb[:, :, :3], cv2.COLOR_RGB2GRAY)

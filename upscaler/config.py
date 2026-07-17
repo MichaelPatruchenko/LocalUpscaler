@@ -35,6 +35,9 @@ DEFAULT_SETTINGS = {
     # LLM advisor: refine auto-config parameters with a local vision/text GGUF
     # model. Falls back to pure algorithmic config when unavailable.
     "use_llm_advisor": True,
+    # «Сделай красиво» генерирует 4 стилевых варианта с выбором пользователя
+    # на каждой итерации доработки (см. engine/four_variants.py).
+    "use_four_variants": False,
 }
 
 

@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self._refine_thread = None  # active LLMRefineThread, if any
         self._eval_thread = None   # active LLMEvaluateThread, if any
         self._iter_state = None     # active refinement loop state, if any
+        self._four_variants = None  # active FourVariantsOrchestrator, if any
         self._last_blend_result = None  # last manual blend preview/apply result
 
         # Batch state
@@ -481,6 +482,9 @@ class MainWindow(QMainWindow):
         self.control_panel.set_ai_assistant_enabled(
             self.settings.get("use_llm_advisor", True))
         self.control_panel.ai_assistant_toggled.connect(self._on_ai_assistant_toggled)
+        self.control_panel.set_variants_enabled(
+            bool(self.settings.get("use_four_variants", False)))
+        self.control_panel.variants_toggled.connect(self._on_variants_toggled)
 
         # Controller
         self.controller.progress_updated.connect(self._on_progress)
@@ -589,6 +593,15 @@ class MainWindow(QMainWindow):
     def _on_ai_assistant_toggled(self, enabled: bool):
         """Persist the assistant toggle so it survives restarts and matches Settings."""
         self.settings["use_llm_advisor"] = bool(enabled)
+        try:
+            save_settings(self.settings)
+        except Exception:
+            pass
+
+    @Slot(bool)
+    def _on_variants_toggled(self, enabled: bool):
+        """Персист чекбокса «4 варианта обработки»."""
+        self.settings["use_four_variants"] = bool(enabled)
         try:
             save_settings(self.settings)
         except Exception:
@@ -860,6 +873,12 @@ class MainWindow(QMainWindow):
         self._set_status("status.analyzing")
         analyzer = SourceAnalyzer()
         analysis = analyzer.analyze(self._current_image, self._current_meta)
+
+        if self.control_panel.is_variants_enabled():
+            # Режим «4 варианта обработки»: галерея выбора на каждой итерации.
+            self._start_four_variants(analysis)
+            return
+
         configurator = AutoConfigurator()
         config = configurator.recommend(analysis, scale=4, enhance_only=False,
                                          allow_predownscale=self.control_panel.is_predownscale_enabled())
@@ -911,6 +930,189 @@ class MainWindow(QMainWindow):
                              allow_deblur=allow_deblur, allow_icedit=allow_icedit,
                              allow_face=allow_face,
                              blend_enabled=self.control_panel.is_blend_enabled())
+
+    # ─── Четыре варианта обработки (сессия с выбором на каждой итерации) ───
+
+    def _start_four_variants(self, analysis: dict):
+        """Собрать 4 стилевых конфига и запустить оркестратор раундов."""
+        from upscaler.engine.four_variants import build_variants
+        from upscaler.engine.analyzer import SourceAnalyzer
+        from upscaler.ui.four_variants_orchestrator import (
+            FourVariantsOrchestrator,
+        )
+
+        allow_deblur = self.control_panel.is_deblur_enabled()
+        allow_icedit = self.control_panel.is_icedit_enabled()
+        allow_face = self.control_panel.is_face_enabled()
+        blend_enabled = self.control_panel.is_blend_enabled()
+
+        variants = build_variants(
+            analysis, scale=4, enhance_only=False,
+            allow_predownscale=self.control_panel.is_predownscale_enabled())
+        for v in variants:
+            cfg = v["config"]
+            if not allow_deblur:
+                cfg.pop("deblur", None)
+            if not allow_icedit:
+                cfg.pop("icedit", None)
+            if not allow_face:
+                cfg.pop("face", None)
+            if blend_enabled:
+                cfg["blend"] = {"enabled": True}
+            else:
+                cfg.pop("blend", None)
+
+        ai_enabled = self.control_panel.is_ai_assistant_enabled()
+        if ai_enabled:
+            try:
+                if self._llm_advisor is None:
+                    from upscaler.engine.llm_advisor import LLMAdvisor
+                    self._llm_advisor = LLMAdvisor(
+                        n_gpu_layers=self._llm_gpu_layers())
+                ai_enabled = self._llm_advisor.available()
+            except Exception:
+                ai_enabled = False
+
+        def _submit(image, config):
+            cfg = dict(config)
+            cfg["device"] = self.settings.get("gpu_device", "auto")
+            cfg = self._inject_face_zones(cfg)
+            cfg = self._inject_blend(cfg)
+            tmp = Path(tempfile.mkdtemp()) / "input.png"
+            write_image(image, tmp)
+            self.controller.submit_job(str(tmp), cfg)
+
+        def _analyze(image):
+            return SourceAnalyzer().analyze(image, self._current_meta,
+                                            detect_faces=False)
+
+        def _refine(image, analysis_, config, directive, cb):
+            from upscaler.ui.llm_worker import LLMRefineThread
+            thread = LLMRefineThread(
+                self._llm_advisor, image, analysis_, config,
+                allow_deblur=allow_deblur, allow_icedit=allow_icedit,
+                allow_face=allow_face, blend_enabled=blend_enabled,
+                style_directive=directive)
+            self._refine_thread = thread
+
+            def _done(refined):
+                thread.quit()
+                thread.wait()
+                thread.deleteLater()
+                self._refine_thread = None
+                cb(refined)
+
+            thread.done.connect(_done)
+            thread.start()
+
+        def _evaluate(image, analysis_, directive, cb):
+            from upscaler.ui.llm_worker import LLMEvaluateThread
+            thread = LLMEvaluateThread(
+                self._llm_advisor, image, analysis_,
+                allow_deblur=allow_deblur, allow_icedit=allow_icedit,
+                allow_face=allow_face, style_directive=directive)
+            self._eval_thread = thread
+
+            def _done(verdict):
+                thread.quit()
+                thread.wait()
+                thread.deleteLater()
+                self._eval_thread = None
+                cb(verdict)
+
+            thread.done.connect(_done)
+            thread.start()
+
+        orch = FourVariantsOrchestrator(
+            variants, self._current_image, analysis,
+            submit=_submit, analyze=_analyze,
+            refine=_refine if ai_enabled else None,
+            evaluate=_evaluate if ai_enabled else None,
+            ai_enabled=ai_enabled,
+            max_iter=self.control_panel.get_max_refine_iterations(),
+            parent=self)
+        orch.status_changed.connect(self._on_variants_status)
+        orch.round_ready.connect(self._on_variants_round_ready)
+        orch.session_done.connect(self._on_variants_done)
+        orch.session_failed.connect(self._on_variants_failed)
+        orch.cancelled.connect(self._on_variants_cancelled)
+        self._four_variants = orch
+
+        self.make_beautiful_btn.setEnabled(False)
+        self.process_btn.setEnabled(False)
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+        self._reset_variants()  # blend-снимки должны отражать текущую сессию
+        orch.start()
+
+    @Slot(str, dict)
+    def _on_variants_status(self, key: str, kwargs: dict):
+        kw = dict(kwargs)
+        name_key = kw.pop("name_key", None)
+        if name_key:
+            kw["name"] = tr(name_key)
+        self._set_status(key, **kw)
+
+    @Slot(list)
+    def _on_variants_round_ready(self, candidates: list):
+        orch = self._four_variants
+        if orch is None:
+            return
+        self.progress_bar.setVisible(False)
+        from upscaler.ui.four_variants_gallery import FourVariantsGalleryDialog
+        dlg = FourVariantsGalleryDialog(candidates, orch.iteration,
+                                        orch.max_iter, self)
+        dlg.exec()
+        idx = dlg.selected_index
+        if idx is None or orch is not self._four_variants:
+            orch.finish()
+            return
+        cand = candidates[idx]
+        if cand.get("status") == "done" and cand.get("result_image") is not None:
+            self._apply_variant_choice(cand, orch.iteration)
+        self.progress_bar.setVisible(True)  # на случай следующего раунда
+        self.progress_bar.setValue(0)
+        orch.choose(idx)
+
+    def _apply_variant_choice(self, cand: dict, iteration: int):
+        """Выбранный кандидат раунда: холст, текущее изображение, история."""
+        img = cand["result_image"]
+        self.canvas.set_before_image(self._current_image)
+        self.canvas.set_after_image(img)
+        self._current_image = img
+        metadata = dict(cand.get("metrics") or {})
+        metadata["variant"] = cand.get("id")
+        metadata["variant_iteration"] = iteration
+        bit_depth = self._current_meta.get("bit_depth", 8)
+        try:
+            version = self.history_manager.add_version(img, metadata, bit_depth)
+            self.history_panel.add_version(
+                version, self.history_manager.get_thumbnail(version), metadata)
+            self._update_disk_usage()
+        except Exception:
+            log.warning("Failed to store chosen variant in history",
+                        exc_info=True)
+
+    def _end_four_variants(self, status_key: str):
+        self._four_variants = None
+        self.progress_bar.setVisible(False)
+        self.process_btn.setEnabled(True)
+        self.make_beautiful_btn.setEnabled(True)
+        self._set_status(status_key)
+
+    @Slot()
+    def _on_variants_done(self):
+        self._end_four_variants("status.variants_done")
+
+    @Slot()
+    def _on_variants_failed(self):
+        self._end_four_variants("status.ready")
+        QMessageBox.critical(self, tr("msg.variants_failed_title"),
+                             tr("msg.variants_failed_body"))
+
+    @Slot()
+    def _on_variants_cancelled(self):
+        self._end_four_variants("status.cancelled")
 
     # ─── Processing ───
 
@@ -1055,6 +1257,18 @@ class MainWindow(QMainWindow):
 
     @Slot(str, str, dict)
     def _on_complete(self, job_id, output_path, metrics):
+        # Активная сессия «4 вариантов»: событие уходит оркестратору,
+        # одиночный путь (история/канвас/итерации) не трогаем.
+        if self._four_variants is not None and self._four_variants.active:
+            orch = self._four_variants
+            try:
+                result_image, _ = read_image(Path(output_path))
+            except Exception as e:
+                orch.handle_error("load", str(e))
+                return
+            orch.handle_complete(result_image, metrics)
+            return
+
         # During an active refinement loop keep controls disabled until finalize.
         if not (self._iter_state and self._iter_state.get("active")):
             self.progress_bar.setVisible(False)
@@ -1160,6 +1374,11 @@ class MainWindow(QMainWindow):
 
     @Slot(str, str, str, bool)
     def _on_error(self, job_id, stage, error, recoverable):
+        if self._four_variants is not None and self._four_variants.active:
+            # Ошибка одного кандидата не срывает сессию — оркестратор
+            # помечает его failed и продолжает раунд.
+            self._four_variants.handle_error(stage, error)
+            return
         self.progress_bar.setVisible(False)
         self.process_btn.setEnabled(True)
         self.make_beautiful_btn.setEnabled(True)
@@ -1176,6 +1395,9 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def _on_cancelled(self, job_id):
+        if self._four_variants is not None and self._four_variants.active:
+            self._four_variants.handle_cancelled()
+            return
         self.progress_bar.setVisible(False)
         self.process_btn.setEnabled(True)
         self.make_beautiful_btn.setEnabled(True)

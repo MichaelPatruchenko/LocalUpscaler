@@ -71,6 +71,32 @@ _STRINGS = {
         "panel.ai_hint": (
             "Снимите, чтобы автоматические кнопки использовали только "
             "алгоритмический подбор без vision-модели и без переоценки."),
+        "panel.variants_checkbox": "4 варианта обработки",
+        "panel.variants_hint": (
+            "«Сделай красиво» построит четыре стилевых варианта (естественный, "
+            "резкий, чистый, насыщенный) и на каждой итерации доработки "
+            "предложит выбрать лучший. Выбранный становится основой следующей "
+            "итерации."),
+        "variants.natural": "Естественный",
+        "variants.sharp": "Резкий / детальный",
+        "variants.clean": "Чистый / без шума",
+        "variants.vivid": "Насыщенный / выразительный",
+        "variants.gallery_title": "Выбор варианта обработки",
+        "variants.gallery_round_title": "Итерация {iter}/{max} — выберите вариант",
+        "variants.choose_btn": "Выбрать",
+        "variants.failed_label": "Ошибка обработки",
+        "variants.satisfied_label": "Без изменений (ИИ доволен)",
+        "variants.metrics_label": "BRISQUE: {brisque:.1f}  NIQE: {niqe:.1f}",
+        "status.variant_processing":
+            "Итерация {iter}/{max} — вариант {n}/{total} «{name}»…",
+        "status.variant_refining":
+            "Итерация {iter}/{max} — ИИ-подбор варианта «{name}»…",
+        "status.variant_evaluating":
+            "Итерация {iter}/{max} — оценка варианта «{name}»…",
+        "status.variants_done": "Сессия вариантов завершена",
+        "msg.variants_failed_title": "4 варианта обработки",
+        "msg.variants_failed_body":
+            "Не удалось обработать ни один из вариантов.",
         "panel.max_iter_label": "Макс. повторных обработок:",
         "panel.max_iter_tooltip": (
             "Сколько конвейеров максимум формирует vision-модель: после "
@@ -485,6 +511,30 @@ _STRINGS = {
         "panel.ai_hint": (
             "Uncheck so automatic buttons use only algorithmic selection, "
             "without the vision model and without re-evaluation."),
+        "panel.variants_checkbox": "4 processing variants",
+        "panel.variants_hint": (
+            "\"Make beautiful\" will build four styled variants (natural, "
+            "sharp, clean, vivid) and offer a choice at each refinement "
+            "iteration. The chosen one seeds the next iteration."),
+        "variants.natural": "Natural",
+        "variants.sharp": "Sharp / detailed",
+        "variants.clean": "Clean / noise-free",
+        "variants.vivid": "Vivid / expressive",
+        "variants.gallery_title": "Choose a processing variant",
+        "variants.gallery_round_title": "Iteration {iter}/{max} — pick a variant",
+        "variants.choose_btn": "Choose",
+        "variants.failed_label": "Processing failed",
+        "variants.satisfied_label": "No changes (AI satisfied)",
+        "variants.metrics_label": "BRISQUE: {brisque:.1f}  NIQE: {niqe:.1f}",
+        "status.variant_processing":
+            "Iteration {iter}/{max} — variant {n}/{total} \"{name}\"…",
+        "status.variant_refining":
+            "Iteration {iter}/{max} — AI-tuning variant \"{name}\"…",
+        "status.variant_evaluating":
+            "Iteration {iter}/{max} — evaluating variant \"{name}\"…",
+        "status.variants_done": "Variants session finished",
+        "msg.variants_failed_title": "4 processing variants",
+        "msg.variants_failed_body": "None of the variants could be processed.",
         "panel.max_iter_label": "Max refinement passes:",
         "panel.max_iter_tooltip": (
             "How many pipelines the vision model builds at most: after "

@@ -222,9 +222,22 @@ def should_continue_refinement(iteration: int, max_iter: int,
     return (not satisfied) and iteration < max_iter
 
 
+def _style_block(style_directive: str) -> str:
+    """Render a non-empty style directive as a prompt priority block."""
+    directive = (style_directive or "").strip()
+    if not directive:
+        return ""
+    return (
+        "STYLE DIRECTIVE (this run targets one of several styled variants; "
+        "bias every parameter and ordering decision toward it):\n"
+        + directive + "\n\n"
+    )
+
+
 def build_evaluation_prompt(summary: str, allow_deblur: bool = True,
                             allow_icedit: bool = True,
-                            allow_face: bool = True) -> str:
+                            allow_face: bool = True,
+                            style_directive: str = "") -> str:
     """Prompt asking the model to judge a PROCESSED result and, if needed,
     return refinement-only overrides (never upscale)."""
     schema = (
@@ -254,6 +267,7 @@ def build_evaluation_prompt(summary: str, allow_deblur: bool = True,
 
     return (
         _ANTI_SOFTEN_RULE + "\n"
+        + _style_block(style_directive) +
         "You are an expert photo-restoration critic. You are shown an ALREADY "
         "PROCESSED image and its measured properties. Judge whether it is a "
         "flawless final result.\n\n"
@@ -295,7 +309,8 @@ def build_prompt(summary: str, base_config: dict,
                  allow_deblur: bool = True,
                  allow_icedit: bool = True,
                  allow_face: bool = True,
-                 blend_enabled: bool = False) -> str:
+                 blend_enabled: bool = False,
+                 style_directive: str = "") -> str:
     """Build the instruction prompt asking for a refined-parameters JSON.
 
     When *allow_deblur* is False the deblur option is removed from both the
@@ -306,6 +321,9 @@ def build_prompt(summary: str, base_config: dict,
     When *blend_enabled* is True the model is informed that a later automatic
     blend step may run (see ``_BLEND_NOTE``); the advisor never emits a
     ``blend`` key itself - blend is not part of the model's output schema.
+    A non-empty *style_directive* (four-variants mode) is inserted as a
+    priority block so the model biases its choices toward that direction;
+    empty keeps the prompt byte-identical to the previous behavior.
     """
     schema = (
         '{\n'
@@ -426,6 +444,7 @@ def build_prompt(summary: str, base_config: dict,
     blend_note = (_BLEND_NOTE + "\n") if blend_enabled else ""
 
     return (
+        _style_block(style_directive) +
         "You are an expert photo-restoration retoucher. You are shown an image "
         "and its measured properties. Your goal is a flawless, natural result: "
         "sharp where it should be, clean of noise, correctly exposed and "
@@ -989,6 +1008,7 @@ class LLMAdvisor:
                allow_icedit: bool = True,
                allow_face: bool = True,
                blend_enabled: bool = False,
+               style_directive: str = "",
                ) -> dict:
         """Return a refined config, or *base_config* unchanged on any problem.
 
@@ -1012,7 +1032,8 @@ class LLMAdvisor:
                                   allow_deblur=allow_deblur,
                                   allow_icedit=allow_icedit,
                                   allow_face=allow_face,
-                                  blend_enabled=blend_enabled)
+                                  blend_enabled=blend_enabled,
+                                  style_directive=style_directive)
             response = gen(prompt, image)
             raw = extract_json(response)
             overrides = validate_overrides(raw, allow_deblur=allow_deblur,
@@ -1031,7 +1052,7 @@ class LLMAdvisor:
     def evaluate(self, image, analysis: dict,
                  allow_deblur: bool = True, allow_icedit: bool = True,
                  allow_face: bool = True,
-                 generate=None) -> dict:
+                 generate=None, style_directive: str = "") -> dict:
         """Judge a processed result. Returns {"satisfied", "config"}.
 
         config is None when satisfied (or on any failure); otherwise an
@@ -1046,7 +1067,7 @@ class LLMAdvisor:
             summary = build_analysis_summary(analysis)
             prompt = build_evaluation_prompt(
                 summary, allow_deblur=allow_deblur, allow_icedit=allow_icedit,
-                allow_face=allow_face)
+                allow_face=allow_face, style_directive=style_directive)
             response = gen(prompt, image)
             raw = extract_json(response)
             satisfied, overrides = validate_evaluation(

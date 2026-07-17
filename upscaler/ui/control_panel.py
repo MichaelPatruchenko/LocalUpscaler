@@ -55,6 +55,7 @@ class ControlPanel(QWidget):
     auto_config_requested = Signal()
     max_iter_changed = Signal(int)
     ai_assistant_toggled = Signal(bool)
+    variants_toggled = Signal(bool)
     predownscale_toggled = Signal(bool)
     section_toggled = Signal(str, bool)
 
@@ -226,6 +227,15 @@ class ControlPanel(QWidget):
         self.ai_hint_label.setWordWrap(True)
         ai_section.add_widget(self.ai_hint_label)
 
+        self.variants_cb = QCheckBox(tr("panel.variants_checkbox"))
+        self.variants_cb.setChecked(False)
+        self.variants_cb.toggled.connect(self.variants_toggled.emit)
+        ai_section.add_widget(self.variants_cb)
+        self.variants_hint_label = QLabel(tr("panel.variants_hint"))
+        self.variants_hint_label.setStyleSheet("color: gray; font-size: 11px;")
+        self.variants_hint_label.setWordWrap(True)
+        ai_section.add_widget(self.variants_hint_label)
+
         refine_row = QWidget()
         refine_layout = QHBoxLayout(refine_row)
         refine_layout.setContentsMargins(0, 0, 0, 0)
@@ -362,6 +372,8 @@ class ControlPanel(QWidget):
 
         self.ai_assistant_cb.setText(tr("panel.ai_assistant_checkbox"))
         self.ai_hint_label.setText(tr("panel.ai_hint"))
+        self.variants_cb.setText(tr("panel.variants_checkbox"))
+        self.variants_hint_label.setText(tr("panel.variants_hint"))
         self.max_iter_label.setText(tr("panel.max_iter_label"))
         self.max_iter_spin.setToolTip(tr("panel.max_iter_tooltip"))
 
@@ -529,6 +541,14 @@ class ControlPanel(QWidget):
 
     def set_ai_assistant_enabled(self, enabled: bool) -> None:
         self.ai_assistant_cb.setChecked(bool(enabled))
+
+    def is_variants_enabled(self) -> bool:
+        """«Сделай красиво» генерирует 4 стилевых варианта с выбором на
+        каждой итерации (см. engine/four_variants.py)."""
+        return bool(self.variants_cb.isChecked())
+
+    def set_variants_enabled(self, enabled: bool) -> None:
+        self.variants_cb.setChecked(bool(enabled))
 
     def is_predownscale_enabled(self) -> bool:
         """Разрешено ли авто-предуменьшение мыльных изображений."""

@@ -523,3 +523,41 @@ def test_control_panel_retranslate_switches_language():
     i18n.set_language("ru")
     panel.retranslate()
     assert panel._sections["adjust"].header_btn.text() == "Коррекция"
+
+
+# --- Чекбокс «4 варианта обработки» (спек 2026-07-17, Часть 2) ---------------
+
+def test_variants_checkbox_default_off_and_toggle():
+    panel = ControlPanel()
+    assert panel.is_variants_enabled() is False
+    panel.set_variants_enabled(True)
+    assert panel.is_variants_enabled() is True
+    panel.set_variants_enabled(False)
+    assert panel.is_variants_enabled() is False
+
+
+def test_variants_checkbox_emits_signal():
+    panel = ControlPanel()
+    got = []
+    panel.variants_toggled.connect(got.append)
+    panel.variants_cb.setChecked(True)
+    assert got == [True]
+
+
+def test_variants_checkbox_lives_next_to_ai_checkbox():
+    panel = ControlPanel()
+    ai_section = panel._sections["ai"]
+    kids = ai_section.findChildren(type(panel.variants_cb))
+    assert panel.variants_cb in kids
+    assert panel.ai_assistant_cb in kids
+
+
+def test_variants_checkbox_retranslates():
+    from upscaler.ui import i18n
+    panel = ControlPanel()
+    i18n.set_language("en")
+    panel.retranslate()
+    assert panel.variants_cb.text() == "4 processing variants"
+    i18n.set_language("ru")
+    panel.retranslate()
+    assert panel.variants_cb.text() == "4 варианта обработки"

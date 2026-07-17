@@ -24,7 +24,7 @@ class LLMRefineThread(QThread):
     def __init__(self, advisor, image, analysis: dict, base_config: dict,
                  parent=None, allow_deblur: bool = True,
                  allow_icedit: bool = True, allow_face: bool = True,
-                 blend_enabled: bool = False):
+                 blend_enabled: bool = False, style_directive: str = ""):
         super().__init__(parent)
         self._advisor = advisor
         self._image = image
@@ -34,15 +34,20 @@ class LLMRefineThread(QThread):
         self._allow_icedit = allow_icedit
         self._allow_face = allow_face
         self._blend_enabled = blend_enabled
+        self._style_directive = style_directive
 
     def run(self):
         try:
+            # style_directive передаётся только когда непуст: пустая директива
+            # означает прежнее поведение (и не ломает советников без параметра).
+            extra = ({"style_directive": self._style_directive}
+                     if self._style_directive else {})
             result = self._advisor.refine(
                 self._image, self._analysis, self._base_config,
                 allow_deblur=self._allow_deblur,
                 allow_icedit=self._allow_icedit,
                 allow_face=self._allow_face,
-                blend_enabled=self._blend_enabled)
+                blend_enabled=self._blend_enabled, **extra)
         except Exception as exc:  # advisor guards internally, but be safe
             log.warning("LLM refine thread failed (%s); using base config", exc)
             result = self._base_config
@@ -59,7 +64,7 @@ class LLMEvaluateThread(QThread):
 
     def __init__(self, advisor, image, analysis: dict, parent=None,
                  allow_deblur: bool = True, allow_icedit: bool = True,
-                 allow_face: bool = True):
+                 allow_face: bool = True, style_directive: str = ""):
         super().__init__(parent)
         self._advisor = advisor
         self._image = image
@@ -67,14 +72,17 @@ class LLMEvaluateThread(QThread):
         self._allow_deblur = allow_deblur
         self._allow_icedit = allow_icedit
         self._allow_face = allow_face
+        self._style_directive = style_directive
 
     def run(self):
         try:
+            extra = ({"style_directive": self._style_directive}
+                     if self._style_directive else {})
             verdict = self._advisor.evaluate(
                 self._image, self._analysis,
                 allow_deblur=self._allow_deblur,
                 allow_icedit=self._allow_icedit,
-                allow_face=self._allow_face)
+                allow_face=self._allow_face, **extra)
         except Exception as exc:
             log.warning("LLM evaluate thread failed (%s); stopping loop", exc)
             verdict = {"satisfied": True, "config": None}
